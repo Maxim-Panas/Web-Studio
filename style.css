@@ -1,0 +1,85 @@
+* {
+  margin: 0;
+  padding: 0;
+  font-family: 'Trebuchet MS', sans-serif;
+}
+
+body {
+  background: radial-gradient(circle at top, #3a1c6b, #0b0218);
+  color: gold;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  animation: fadeIn 0.8s ease;
+}
+
+.active {
+  display: flex;
+}
+
+h1, h2 {
+  text-shadow: 0 0 15px gold;
+  margin-bottom: 20px;
+}
+
+.levels button {
+  background: linear-gradient(145deg, gold, #ffb300);
+  border: none;
+  margin: 8px;
+  padding: 14px 30px;
+  border-radius: 30px;
+  font-size: 18px;
+}
+
+.chest {
+  width: 180px;
+  height: 140px;
+  background: linear-gradient(145deg, #b8860b, #ffd700);
+  border-radius: 20px;
+  box-shadow: 0 0 40px gold;
+  animation: pulse 2s infinite;
+}
+
+#reward {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.glow {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, gold 0%, transparent 70%);
+  border-radius: 50%;
+  animation: glowFade 1.5s forwards;
+}
+
+#rewardText {
+  position: absolute;
+  font-size: 24px;
+  text-shadow: 0 0 20px gold;
+}
+
+@keyframes fadeIn {
+  from {opacity:0}
+  to {opacity:1}
+}
+
+@keyframes pulse {
+  0%,100% {transform: scale(1)}
+  50% {transform: scale(1.05)}
+}
+
+@keyframes glowFade {
+  from {opacity:1}
+  to {opacity:0.4}
+}

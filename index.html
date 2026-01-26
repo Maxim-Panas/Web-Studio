@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПУТЬ АРТЕФАКТОВ</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+body{
+  height:100vh;
+  font-family:'Cinzel',serif;
+  background:
+    radial-gradient(circle at top,
+      rgba(180,70,255,0.45),
+      rgba(90,0,140,0.55),
+      rgba(20,0,35,0.95)
+    ),
+    linear-gradient(180deg,
+      #2a0040 0%,
+      #14001f 45%,
+      #050008 100%
+    );
+  color:#fff;
+  overflow:hidden;
+}
+
+:root{
+  --gold-main: #d6a84a;
+  --gold-dark: #8f6a1f;
+  --gold-glow: rgba(214,168,74,0.55);
+}
+
+
+.glow{
+  text-shadow:
+    0 0 6px rgba(160,80,255,0.6),
+    0 0 14px rgba(120,40,200,0.8),
+    0 0 22px rgba(255,170,60,0.45);
+}
+
+.screen{
+  position:absolute; inset:0;
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  padding:20px;
+  transition:opacity .6s;
+}
+.screen.active{display:flex;opacity:1}
+.screen.hidden{opacity:0}
+
+/* ===== MENU ===== */
+.level-btn{
+  border:2px solid var(--gold-dark);
+  padding:14px;
+  margin:10px 0;
+  border-radius:14px;
+  text-align:center;
+   color:var(--gold-main);
+  box-shadow:0 0 20px var(--gold-glow);
+}
+.level-btn.locked{
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* ===== GAME ===== */
+.header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+.attempts{
+  border:2px solid var(--gold-dark);
+  padding:6px 12px;
+  border-radius:10px;
+}
+.chest{
+  width:220px;
+  margin:auto;
+  filter:
+    drop-shadow(0 0 18px rgba(180,80,255,0.55))
+    drop-shadow(0 0 30px rgba(255,160,60,0.35));
+}
+.shake{animation:shake .5s}
+@keyframes shake{
+  0%{transform:rotate(0)}
+  25%{transform:rotate(-6deg)}
+  50%{transform:rotate(6deg)}
+  75%{transform:rotate(-4deg)}
+  100%{transform:rotate(0)}
+}
+.open-btn{
+  margin-top:20px;
+  background:linear-gradient(145deg,
+    #e0b15a,
+    #9c6a1d
+  );
+  padding:16px;
+  border-radius:16px;
+  text-align:center;
+  color:#2a1200;
+  box-shadow:
+    0 0 18px rgba(180,80,255,0.4),
+    0 0 28px rgba(224,177,90,0.6);
+}
+
+
+/* ===== OVERLAY ===== */
+#overlay{
+  position:fixed; inset:0;
+  background:radial-gradient(circle,#fff9d6,rgba(255,215,120,.8),rgba(0,0,0,.9));
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:10;
+}
+
+#overlay::before {
+  content: "";
+  position: absolute;
+  width: 1000px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(150,0,255,0.35) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1; /* позаду тексту */
+}
+
+#prizeText {
+  font-size: 15px;
+  text-align: center;
+  z-index: 2; /* поверх фіолетового п’ятна */
+  
+}
+
+.artifact-slot {
+  width:80px; height:80px;
+  border:2px solid var(--gold-dark);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.05);
+  box-shadow:0 0 12px rgba(214,168,74,0.4);
+  z-index: 3;
+}
+.artifact-slot img {
+  max-width:70px; max-height:70px;
+   z-index: 3;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu" class="screen active">
+  <h2 class="glow" style="text-align:center; color:var(--gold-main);">ПУТЬ АРТЕФАКТОВ</h2>
+  <div id="levels"></div>
+  <div id="artifactGallery" style="display:flex;justify-content:center;gap:12px;margin-top:20px;">
+  <img src="11.png">
+  <img src="11.png">
+  <img src="11.png">
+  <img src="11.png">
+  <img src="11.png">
+</div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen hidden">
+  <div class="header">
+    <div id="levelTitle" class="glow"></div>
+    <div class="attempts glow" id="attempts"></div>
+  </div>
+
+  <img id="chest" class="chest" src="Case.png">
+  <div class="open-btn glow" id="openBtn">ОТКРЫТЬ СУНДУК</div>
+</div>
+
+<!-- PRIZE -->
+<div id="overlay">
+  <div class="glow" id="prizeText" style="font-size:26px"></div>
+  <div style="margin-top:15px;opacity:.8">Нажмите в любое место, чтобы продолжить</div>
+</div>
+
+<script>
+let levels = Array(5).fill(false);
+let current = 0, attempts = 3, gotFree = false, chests = 0, locked = false;
+
+// масив зображень артефактів
+const artifacts = [
+  "1.png",
+  "2.png",
+  "3.png",
+  "4.png",
+  "5.png"
+];
+let collected = []; // зібрані артефакти
+
+const menu = document.getElementById('menu');
+const game = document.getElementById('game');
+const overlay = document.getElementById('overlay');
+const prizeText = document.getElementById('prizeText');
+
+function renderMenu(){
+  const box=document.getElementById('levels');
+  box.innerHTML='';
+  levels.forEach((done,i)=>{
+    const b=document.createElement('div');
+    b.className='level-btn'+(done?' locked':'');
+    b.textContent='Уровень '+(i+1);
+    b.onclick=()=>startLevel(i);
+    box.appendChild(b);
+  });
+}
+
+function startLevel(i){
+  current=i; attempts=3; gotFree=false; chests=0;
+  switchScreen(menu,game);
+  document.getElementById('levelTitle').textContent='Уровень '+(i+1);
+  updateAttempts();
+}
+
+function updateAttempts(){
+  document.getElementById('attempts').textContent='Попытки: '+attempts;
+}
+
+document.getElementById('openBtn').onclick=()=>{
+  if(locked||attempts<=0)return;
+  locked=true; attempts--; updateAttempts();
+  chest.classList.add('shake');
+  setTimeout(()=>{chest.classList.remove('shake');openPrize()},500);
+};
+
+function openPrize(){
+  let prize;
+  
+  if(chests===0){
+    prize='❌ ПУСТО';
+    prizeText.textContent=prize;
+  } else if(chests===1){
+    let roll=Math.random()*100;
+    if(roll<60){
+      prize='❌ ПУСТО';
+      prizeText.textContent=prize;
+    } else if(roll<85){
+      prize='🔁 +1 ПОПЫТКА';
+      attempts++; gotFree=true; updateAttempts();
+      prizeText.textContent=prize;
+    } else {
+      showArtifact();
+    }
+  } else {
+    let roll=Math.random();
+    if(!levels[current] && roll < 0.25){
+      showArtifact();
+    } else if(!gotFree){
+      prize='🔁 +1 ПОПЫТКА';
+      attempts++; gotFree=true; updateAttempts();
+      prizeText.textContent=prize;
+    } else {
+      prize='❌ ПУСТО';
+      prizeText.textContent=prize;
+    }
+  }
+
+  overlay.style.display='flex';
+}
+
+function showArtifact(){
+  // вибираємо артефакт, який ще не зібраний
+  let available = artifacts.filter(a => !collected.includes(a));
+  if(available.length===0){
+    prizeText.textContent="🎉 Всі артефакти зібрані! Гра завершена.";
+    // тут можна зробити redirect або показати фінальний екран
+    return;
+  }
+  let artifact = available[Math.floor(Math.random()*available.length)];
+  collected.push(artifact);
+  levels[current]=true;
+
+  // показуємо картинку замість тексту
+  prizeText.innerHTML = `<img src="${artifact}" style="max-width:50px;">`;
+
+  // якщо всі артефакти зібрані
+  if(collected.length===artifacts.length){
+    setTimeout(()=>{
+      prizeText.textContent="🎉 Всі артефакти зібрані! Гра завершена.";
+    },1500);
+  }
+}
+
+overlay.onclick=()=>{
+  overlay.style.display='none';
+  locked=false;
+  chests++;
+
+  if(levels[current]||attempts<=0||chests>=5){
+    switchScreen(game,menu);
+    renderMenu();
+  }
+};
+
+function renderGallery(){
+  const gallery = document.getElementById('artifactGallery');
+  gallery.innerHTML = '';
+  for(let i=0;i<artifacts.length;i++){
+    const slot = document.createElement('div');
+    slot.className = 'artifact-slot';
+    if(collected.includes(artifacts[i])){
+      let img = document.createElement('img');
+      img.src = artifacts[i];
+      slot.appendChild(img);
+    }
+    gallery.appendChild(slot);
+  }
+}
+
+function switchScreen(from,to){
+  from.classList.add('hidden');
+  setTimeout(()=>{
+    from.classList.remove('active');
+    to.classList.add('active');
+    to.classList.remove('hidden');
+  },600);
+}
+
+renderMenu();
+</script>
+
+</body>
+</html>
